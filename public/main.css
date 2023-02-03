@@ -1,0 +1,29 @@
+.image{
+    display: flex;
+    float: left;
+    
+}
+
+.name{
+    text-align: center;
+    font-size: larger;
+}
+
+.para{
+    text-align: right;
+    letter-spacing: 2.6px;
+}
+.about{
+    text-align: center;
+}
+
+.future{
+    color: aqua;
+    font-size: 40px;
+}
+
+.coming{
+    text-align: center;
+    
+    
+}

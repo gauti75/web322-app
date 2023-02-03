@@ -1,18 +1,18 @@
 /*********************************************************************************
-*  WEB322 – Assignment 1
-*  I declare that this assignment is my own work in accordance with Seneca  Academic Policy.  
-*  No part of this assignment has been copied manually or electronically from any other source
-*  (including web sites) or distributed to other students.
+*  WEB322 – Assignment 02
+*  I declare that this assignment is my own work in accordance with Seneca  Academic Policy.  No part *  of this assignment has been copied manually or electronically from any other source 
+*  (including 3rd party web sites) or distributed to other students.
 * 
-*  Name: _________Gautam Gandotra_____________ Student ID: __164064214____________ Date: ____2/01/23____________
+*  Name: Gautam Gandotra Student ID: 164064214 Date: 03/02/2023
 *
-*  Online (Cyclic) URL: https://super-drawers-foal.cyclic.app/
+*  Online (Cyclic) Link: https://proud-moccasins-bear.cyclic.app/
 *
 ********************************************************************************/ 
 
-const path = require('path');
-var blogService = require("./blog-service");
-var express = require("express");
+
+const path = require('path');// getting the path module 
+var blogService = require("./blog-service");// getting the blog-service.js to use its functions
+var express = require("express");// getting the express module
 var app = express();
 
 var HTTP_PORT = process.env.PORT || 8080;
@@ -22,7 +22,8 @@ function onHttpStart() {
   console.log("Express http server listening on: " + HTTP_PORT);
 }
 
-app.use(express.static('public')); 
+// to use the css file.
+app.use(express.static(__dirname)); 
 
 // setup a 'route' to listen on the default url path (http://localhost)
 app.get("/", function(req,res){
@@ -34,39 +35,36 @@ app.get("/about", function(req,res){
     res.sendFile(path.join(__dirname,"/views/about.html"));
  });
 
- app.get("/blog", (req, res) => {
-    blogService
-    .getPublishedPosts()
-    .then(posts => {
-    res.send(posts);
-    }).catch(err => {
-    console.error(err);
-    res.send({message: err});});
+ // using the logic of promise of only published posts with then and catch to show it on the website with the help of the get method
+app.get("/blog",function(req,res){
+    blogService.getPublishedPosts().then((posts)=>{
+        res.send(posts);
+    }).catch((err)=>{
+        res.send({message: err});
+    });
+})
+
+// using the logic of promise of only categories with then and catch to show it on the website with the help of the get method
+app.get("/categories",function(req,res){
+    blogService.getCategories().then((categories)=>{
+        res.send(categories);
+    }).catch((err)=>{
+        res.send({message: err});
+    });
 });
 
-app.get("/posts", (req, res) => {
-    blogService
-    .getAllPosts()
-    .then(posts => {
-    res.send(posts);
-    }).catch(err => {
-    console.error(err);
-    res.send({message: err});});
-});
+// using the logic of promise of only All Posts with then and catch to show it on the website with the help of the get method
+app.get("/posts",function(req,res){
+    blogService.getAllPosts().then((categories)=>{
+        res.send(categories);
+    }).catch((err)=>{
+        res.send({message: err});
+    });
+})
 
-app.get("/categories", (req, res) => {
-    blogService
-    .getCategories()
-    .then(categories => {
-    res.send(categories);
-    }).catch((err) => {
-    console.error(err);
-    res.send({message: err});});
-});
-
-
+// This will show if any link does not work in the website
 app.get("*", (req, res) => {
-    res.status(404).send("Page Not Found");
+    res.status(404).send("OOPS! Page Not Found");
 });
  
 
