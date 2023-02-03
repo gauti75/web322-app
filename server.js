@@ -10,16 +10,76 @@
 *
 ********************************************************************************/ 
 
-
-var HTTP_PORT = process.env.PORT || 8080;
+const path = require('path');
+var blogService = require("./blog-service");
 var express = require("express");
 var app = express();
 
-// setup a 'route' to listen on the default url path
-app.get("/", (req, res) => {
-    res.send("Gautam Gandotra - 164064214");
+var HTTP_PORT = process.env.PORT || 8080;
+
+// call this function after the http server starts listening for requests
+function onHttpStart() {
+  console.log("Express http server listening on: " + HTTP_PORT);
+}
+
+app.use(express.static('public')); 
+
+// setup a 'route' to listen on the default url path (http://localhost)
+app.get("/", function(req,res){
+    res.redirect("/about");
 });
 
+// setup another route to listen on /about
+app.get("/about", function(req,res){
+    res.sendFile(path.join(__dirname,"/views/about.html"));
+ });
+
+ app.get("/blog", (req, res) => {
+    blogService
+    .getPublishedPosts()
+    .then(posts => {
+    res.send(posts);
+    }).catch(err => {
+    console.error(err);
+    res.send({message: err});});
+});
+
+app.get("/posts", (req, res) => {
+    blogService
+    .getAllPosts()
+    .then(posts => {
+    res.send(posts);
+    }).catch(err => {
+    console.error(err);
+    res.send({message: err});});
+});
+
+app.get("/categories", (req, res) => {
+    blogService
+    .getCategories()
+    .then(categories => {
+    res.send(categories);
+    }).catch((err) => {
+    console.error(err);
+    res.send({message: err});});
+});
+
+
+app.get("*", (req, res) => {
+    res.status(404).send("Page Not Found");
+});
+ 
+
 // setup http server to listen on HTTP_PORT
-app.listen(HTTP_PORT);
+
+blogService.initialize().then(()=>{
+    app.listen(HTTP_PORT, onHttpStart);
+
+}).catch(()=>{
+    console.log("error");
+});
+
+    
+
+
 
