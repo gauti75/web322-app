@@ -1,33 +1,31 @@
 // Using the fs module to read the file as it is important 
 
-const fs=require("fs");// required at the top of your module
+const fs=require("fs");
 
-let posts=[];// initializing posts array to zero
-let categories=[];// initializing categories array to zero
+let posts=[];
+let categories=[];
 
 
 module.exports.initialize= function (){
-    return new Promise((resolve,reject)=>{
-        // using readFile from fs module to successfully read the file posts.json which is inside the data directory
+    return new Promise((resolve,reject) =>{
+        
         fs.readFile('./data/posts.json', 'utf8', (err, data) => {
             if (err){
                 reject("unable to read file");
             }
             else{
-                //  Using the parse function to make the posts json data which is a collection of objects into an array of objects 
-                // so that it can  easily used to pass as a data and also to easily calculate its length.
+                
                 posts=JSON.parse(data);
             
            
-            // using readFile from fs module to successfully read the file categories.json which is inside the data directory
+           
             fs.readFile('./data/categories.json', 'utf8', (err, data) => {
                 if (err){
-                    // calling the reject if there is error in reading file
+                    
                     reject("unable to read file");
                 }
                 else{
-                    //  Using the parse function to make the categories json data which is a collection of objects into an array of objects 
-                    // so that it can  easily used to pass as a data and also to easily calculate its length.
+                    
 
                 categories=JSON.parse(data);
                 resolve();
@@ -85,4 +83,61 @@ module.exports.getCategories=function(){
             resolve(categories);
         }
     });
+}
+
+module.exports.addPost=function(postData){
+    return new Promise((resolve,reject)=>{
+        if(postData.published==undefined){
+            postData.published=false;
+        }
+        else{
+            postData.published=true;
+        }
+        postData.id = posts.length + 1;
+        posts.push(postData);
+
+        resolve(postData);
+
+
+    })
+}
+
+
+module.exports.getPostsByCategory=function(category){
+    return new Promise((resolve,reject)=>{
+        let required_posts=posts.filter(posts => posts.category==category);
+        if(required_posts.length!=0){
+            resolve(required_posts);
+        }
+        else{
+            reject("no results returned");
+        }
+    })
+}
+
+module.exports.getPostsByMinDate=function(minDateStr) {
+    return new Promise((resolve,reject)=>{
+        let post_Dates = posts.filter(posts => posts.postDate >= minDateStr);
+        if(post_Dates.length==0){
+            reject("no results returned");
+        }
+        else{
+            resolve(post_Dates);
+        }
+    })
+}
+
+
+module.exports.getPostById=function(id){
+    return new Promise((resolve,reject)=>{
+        
+        let required_id=posts.filter(posts => posts.id==id);
+        if(required_id.length != 0){        
+            
+            resolve(required_id);
+        }
+        else{
+            reject("no results returned");
+        }
+    })
 }
