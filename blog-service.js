@@ -72,6 +72,8 @@ module.exports.getPublishedPosts= function (){
     });
 }
 
+
+
 module.exports.getCategories=function(){
     // Using Promise to get the data if the length of the array categories is not true or 
     // shows no message returned using reject if the length is zero.
@@ -86,6 +88,8 @@ module.exports.getCategories=function(){
 }
 
 module.exports.addPost=function(postData){
+    postData.id = posts.length + 1;
+        posts.push(postData);
     return new Promise((resolve,reject)=>{
         if(postData.published==undefined){
             postData.published=false;
@@ -93,13 +97,31 @@ module.exports.addPost=function(postData){
         else{
             postData.published=true;
         }
-        postData.id = posts.length + 1;
-        posts.push(postData);
+        
 
         resolve(postData);
 
 
     })
+}
+
+
+module.exports.getPublishedPostsByCategory= function (){
+    return new Promise((resolve,reject)=>{
+        
+
+       
+        const post = posts.filter(posts => posts.published == true && post.category == category);// using array. filter method to get the required filtered data set form the posts array
+        
+        if(posts.length==0){
+            // Using Promise to get the data if the length of the array posts which published are not true or 
+            // shows no message returned using reject if the length of the required posts is zero.
+            reject("no results returned");
+        }
+        else{
+            resolve(post);
+        }
+    });
 }
 
 
@@ -132,9 +154,10 @@ module.exports.getPostById=function(id){
     return new Promise((resolve,reject)=>{
         
         let required_id=posts.filter(posts => posts.id==id);
-        if(required_id.length != 0){        
+        const userPost=required_id[0];//getting the user post as receiving all the posts set all the other posts to zero setting the index of the selected post to zero.
+        if(userPost){        
             
-            resolve(required_id);
+            resolve(userPost);
         }
         else{
             reject("no results returned");
