@@ -15,6 +15,7 @@ var blogService = require("./blog-service");// getting the blog-service.js to us
 var express = require("express");// getting the express module
 var app = express();
 
+var authData=require("./auth-service");
 
 const multer = require("multer");
 const cloudinary = require('cloudinary').v2;
@@ -24,8 +25,41 @@ const exphbs = require('express-handlebars');
 
 const stripJs = require('strip-js');
 
+const clientSessions=require('client-sessions');
+
+
+// setting up the Client Session
+
+app.use(express.static("static"));
+
+// Setup client-sessions
+app.use(clientSessions({
+  cookieName: "session", 
+  secret: "GautamGandotraWebApp", 
+  duration: 1 * 60 * 1000, 
+  activeDuration: 1000 * 60 *2
+}));
+
 // using middleware
 app.use(express.urlencoded({extended: true}));
+
+
+app.use(function(req, res, next) {
+    res.locals.session = req.session;
+    next();
+  });
+  
+// Middleware for checking authentication
+  function ensureLogin(req, res, next) {
+    if (!req.session.user) {
+      res.redirect("/login");
+    } else {
+      next();
+    }
+  }
+
+
+
 
 var HTTP_PORT = process.env.PORT || 8080;
 
@@ -215,7 +249,7 @@ app.use(express.static(__dirname));
 
 // using the logic of promise of only categories with then and catch to show it on the website with the help of the get method
 
-app.get("/categories",function(req,res){
+app.get("/categories",ensureLogin,function(req,res){
     blogService.getCategories().then((data)=>{
         if(data){
             console.log(data);
@@ -234,11 +268,11 @@ app.get("/categories",function(req,res){
 
 // Get route for categories/add
 
-app.get("/categories/add", (req, res) => {
+app.get("/categories/add",ensureLogin, (req, res) => {
     res.render("addCategory");
   });
 
-  app.post("/categories/add", (req, res) => {
+  app.post("/categories/add", ensureLogin,(req, res) => {
     blogService.addCategory(req.body).then(post=>{
         res.redirect("/categories");
     }).catch(err=>{
@@ -248,7 +282,7 @@ app.get("/categories/add", (req, res) => {
 
   // Get route for posts
 
-app.get('/posts', (req, res) => {
+app.get('/posts',ensureLogin, (req, res) => {
 
     let queryPromise = null;
 
@@ -274,7 +308,7 @@ app.get('/posts', (req, res) => {
 
 // GEt route for posts/add
 
-app.get('/posts/add',(req,res)=>{
+app.get('/posts/add',ensureLogin,(req,res)=>{
     blogService.getCategories().then(function(data){
         res.render("addPost", {categories: data});
     }).catch((err)=>{
@@ -286,7 +320,7 @@ app.get('/posts/add',(req,res)=>{
 
   // Post route for posts/add
 
-  app.post("/posts/add", upload.single("featureImage"), (req,res)=>{
+  app.post("/posts/add",ensureLogin, upload.single("featureImage"), (req,res)=>{
 
     if(req.file){
         let streamUpload = (req) => {
@@ -337,7 +371,7 @@ app.get('/posts/add',(req,res)=>{
 
 /////////////////////***************Deleting Categories******************************///////////////////////////
 
-app.get("/categories/delete/:id",function(req,res){
+app.get("/categories/delete/:id",ensureLogin,function(req,res){
     blogService.deleteCategoryById(req.params.id).then(()=>{
         res.redirect("/categories");
     }).catch((err)=>{
@@ -349,7 +383,7 @@ app.get("/categories/delete/:id",function(req,res){
 
 /////////////////////***************Deleting Posts******************************///////////////////////////
 
-app.get("/posts/delete/:id",function(req,res){
+app.get("/posts/delete/:id",ensureLogin,function(req,res){
     blogService.deletePostById(req.params.id).then(()=>{
         res.redirect("/posts");
     }).catch((err)=>{
@@ -357,6 +391,67 @@ app.get("/posts/delete/:id",function(req,res){
         console.log("Unable to Remove Post / Post not found)");
     });
 })
+
+
+
+
+// login route
+
+app.get('/login', function(req, res) {
+    res.render('login');
+  });
+
+
+  // register route
+  app.get("/register", function(req, res) {
+    res.render("register");
+  });
+
+
+  // post register route
+
+  app.post('/register', function(req, res) {
+    authData.registerUser(req.body)
+    .then(() => {
+      res.render('register', { successMessage: 'User created' });
+    })
+    .catch((err) => {
+      res.render('register', { errorMessage: err, userName: req.body.userName });
+    });
+  });
+
+
+  // post login
+
+
+  app.post('/login', function(req, res) {
+    req.body.userAgent = req.get('User-Agent');
+    authData.checkUser(req.body).then((user) => {
+        req.session.user = {
+            userName:user.userName, // authenticated user's userName
+            email: user.email,// authenticated user's email
+            loginHistory: user.loginHistory// authenticated user's loginHistory
+        };
+        res.redirect('/posts');
+        
+    }).catch((err) => {
+      res.render('login', { errorMessage: err, userName: req.body.userName });
+    });
+  });
+
+
+  // logout route
+
+  app.get('/logout', function(req, res) {
+    req.session.reset();
+    res.redirect("/");
+  });
+
+  // get userHistory
+
+  app.get("/userHistory", ensureLogin, function(req, res) {
+    res.render('userHistory');
+  });
 
 
 // This will show if any link does not work in the website
@@ -367,7 +462,7 @@ app.get("*", (req, res) => {
 
 // setup http server to listen on HTTP_PORT
 
-blogService.initialize().then(()=>{
+blogService.initialize().then(authData.initialize()).then(()=>{
     app.listen(HTTP_PORT, onHttpStart);
 
 }).catch(()=>{
@@ -375,6 +470,3 @@ blogService.initialize().then(()=>{
 });
 
     
-
-
-
